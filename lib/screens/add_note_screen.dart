@@ -4,15 +4,23 @@ import 'package:push_notes/models/note.dart';
 import '../widgets/app_bar.dart';
 
 class AddNoteScreen extends StatefulWidget {
-  const AddNoteScreen({super.key});
+  final Note? existingNote;
+  const AddNoteScreen({super.key, this.existingNote});
 
   @override
   State<AddNoteScreen> createState() => _AddNoteScreenState();
 }
 
 class _AddNoteScreenState extends State<AddNoteScreen> {
-  final _titleCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
+  late final TextEditingController _titleCtrl;
+  late final TextEditingController _descCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleCtrl = TextEditingController(text: widget.existingNote?.title ?? '');
+    _descCtrl = TextEditingController(text: widget.existingNote?.description ?? '');
+  }
 
   @override
   void dispose() {
@@ -21,11 +29,13 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     super.dispose();
   }
 
+  bool get _isEditing => widget.existingNote != null;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: TopBar(),
+      appBar: TopBar(title: _isEditing ? '_Edit Note' : '_New Note'),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -73,7 +83,14 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                     );
                     return;
                   }
-                  Hive.box<Note>('notes').add(Note(title: title, description: desc));
+                  final box = Hive.box<Note>('notes');
+                  if (_isEditing) {
+                    widget.existingNote!.title = title;
+                    widget.existingNote!.description = desc;
+                    widget.existingNote!.save();
+                  } else {
+                    box.add(Note(title: title, description: desc));
+                  }
                   Navigator.pop(context);
                 },
                 style: OutlinedButton.styleFrom(
@@ -82,9 +99,9 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                   side: const BorderSide(color: Colors.white),
                   shape: const RoundedRectangleBorder(),
                 ),
-                child: const Text(
-                  '~> crear nota',
-                  style: TextStyle(fontFamily: 'monospace', fontSize: 18),
+                child: Text(
+                  _isEditing ? '~> guardar cambios' : '~> crear nota',
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 18),
                 ),
               ),
             ),

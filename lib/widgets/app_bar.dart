@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
-  const TopBar({super.key});
-  
- @override
+  final String title;
+  const TopBar({super.key, this.title = '_Notes'});
+
+  @override
   Size get preferredSize => const Size.fromHeight(70);
 
   @override
@@ -16,9 +17,9 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
       iconTheme: const IconThemeData(color: Colors.white),
       shape: const Border(bottom: BorderSide(color: Colors.white, width: 1)),
       title: Center(
-        child: const Text(
-          '_Notes',
-          style: TextStyle(
+        child: Text(
+          title,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.white,
             fontSize: 45,

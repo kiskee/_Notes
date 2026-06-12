@@ -63,8 +63,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           Positioned(
-            bottom: 80,
-            right: 40,
+            bottom: 40,
+            right: 10,
             child: GestureDetector(
               onTap: () => Navigator.push(context, CRTPageRoute(page: const AddNoteScreen())),
               child: const Icon(Icons.add, color: Colors.white, size: 80),
@@ -148,6 +148,16 @@ class _NoteTile extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          IconButton(
+                            onPressed: () => Navigator.push(
+                              context,
+                              CRTPageRoute(page: AddNoteScreen(existingNote: note)),
+                            ),
+                            icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 20),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               note.description.isEmpty ? 'sin descripcion' : note.description,
@@ -158,6 +168,7 @@ class _NoteTile extends StatelessWidget {
                               ),
                             ),
                           ),
+                          const SizedBox(width: 8),
                           IconButton(
                             onPressed: () => _confirmDelete(context),
                             icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
