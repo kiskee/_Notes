@@ -4,6 +4,7 @@ import 'package:push_notes/screens/add_note_screen.dart';
 import 'package:push_notes/services/note_service.dart';
 import 'package:push_notes/widgets/app_bar.dart';
 import 'package:push_notes/widgets/crt_route.dart';
+import 'package:intl/intl.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -29,11 +30,17 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('cancelar', style: TextStyle(fontFamily: 'monospace', color: Colors.grey)),
+            child: const Text(
+              'cancelar',
+              style: TextStyle(fontFamily: 'monospace', color: Colors.grey),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('eliminar', style: TextStyle(fontFamily: 'monospace', color: Colors.red)),
+            child: const Text(
+              'eliminar',
+              style: TextStyle(fontFamily: 'monospace', color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -44,7 +51,10 @@ class _MyHomePageState extends State<MyHomePage> {
           if (ctx.mounted) {
             messenger.showSnackBar(
               const SnackBar(
-                content: Text('nota eliminada', style: TextStyle(fontFamily: 'monospace')),
+                content: Text(
+                  'nota eliminada',
+                  style: TextStyle(fontFamily: 'monospace'),
+                ),
                 duration: Duration(seconds: 2),
               ),
             );
@@ -52,7 +62,12 @@ class _MyHomePageState extends State<MyHomePage> {
         } catch (e) {
           if (ctx.mounted) {
             messenger.showSnackBar(
-              SnackBar(content: Text(e.toString(), style: const TextStyle(fontFamily: 'monospace'))),
+              SnackBar(
+                content: Text(
+                  e.toString(),
+                  style: const TextStyle(fontFamily: 'monospace'),
+                ),
+              ),
             );
           }
         }
@@ -78,23 +93,31 @@ class _MyHomePageState extends State<MyHomePage> {
                     return const Center(
                       child: Text(
                         '~> sin notas',
-                        style: TextStyle(fontFamily: 'monospace', fontSize: 24, color: Colors.grey),
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 24,
+                          color: Colors.grey,
+                        ),
                       ),
                     );
                   }
                   return ListView(
-                    children: notes.map((note) => _NoteTile(
-                      note: note,
-                      isExpanded: _expandedKeys.contains(note.key),
-                      onTap: () => setState(() {
-                        if (_expandedKeys.contains(note.key)) {
-                          _expandedKeys.remove(note.key);
-                        } else {
-                          _expandedKeys.add(note.key);
-                        }
-                      }),
-                      onDelete: () => _confirmDelete(context, note),
-                    )).toList(),
+                    children: notes
+                        .map(
+                          (note) => _NoteTile(
+                            note: note,
+                            isExpanded: _expandedKeys.contains(note.key),
+                            onTap: () => setState(() {
+                              if (_expandedKeys.contains(note.key)) {
+                                _expandedKeys.remove(note.key);
+                              } else {
+                                _expandedKeys.add(note.key);
+                              }
+                            }),
+                            onDelete: () => _confirmDelete(context, note),
+                          ),
+                        )
+                        .toList(),
                   );
                 },
               ),
@@ -104,7 +127,10 @@ class _MyHomePageState extends State<MyHomePage> {
             bottom: 40,
             right: 10,
             child: GestureDetector(
-              onTap: () => Navigator.push(context, CRTPageRoute(page: const AddNoteScreen())),
+              onTap: () => Navigator.push(
+                context,
+                CRTPageRoute(page: const AddNoteScreen()),
+              ),
               child: const Icon(Icons.add, color: Colors.white, size: 80),
             ),
           ),
@@ -137,11 +163,19 @@ class _NoteTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '~> ${note.title}',
+              ':  ${note.title} >',
               style: const TextStyle(
                 fontFamily: 'monospace',
                 fontSize: 18,
                 color: Colors.white,
+              ),
+            ),
+            Text(
+              DateFormat('yyyy-MM-dd HH:mm').format(note.createdAt),
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
+                color: Colors.grey,
               ),
             ),
             AnimatedSize(
@@ -157,16 +191,24 @@ class _NoteTile extends StatelessWidget {
                           IconButton(
                             onPressed: () => Navigator.push(
                               context,
-                              CRTPageRoute(page: AddNoteScreen(existingNote: note)),
+                              CRTPageRoute(
+                                page: AddNoteScreen(existingNote: note),
+                              ),
                             ),
-                            icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 20),
+                            icon: const Icon(
+                              Icons.edit_outlined,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              note.description.isEmpty ? 'sin descripcion' : note.description,
+                              note.description.isEmpty
+                                  ? 'sin descripcion'
+                                  : note.description,
                               style: const TextStyle(
                                 fontFamily: 'monospace',
                                 fontSize: 14,
@@ -177,7 +219,11 @@ class _NoteTile extends StatelessWidget {
                           const SizedBox(width: 8),
                           IconButton(
                             onPressed: onDelete,
-                            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                              size: 20,
+                            ),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
                           ),
@@ -186,6 +232,13 @@ class _NoteTile extends StatelessWidget {
                     )
                   : const SizedBox.shrink(),
             ),
+            const Divider(
+              height: 20,
+              thickness: 1,
+              color: Colors.white,
+              indent: 2,
+            ),
+            const SizedBox(height: 10),
           ],
         ),
       ),
