@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:push_notes/models/note.dart';
 import 'package:push_notes/screens/add_note_screen.dart';
+import 'package:push_notes/services/note_service.dart';
 import 'package:push_notes/widgets/app_bar.dart';
 import 'package:push_notes/widgets/crt_route.dart';
 
@@ -13,13 +13,51 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late final Box<Note> _notesBox;
+  final _noteService = NoteService();
   final Set<dynamic> _expandedKeys = {};
 
-  @override
-  void initState() {
-    super.initState();
-    _notesBox = Hive.box<Note>('notes');
+  void _confirmDelete(BuildContext ctx, Note note) {
+    final messenger = ScaffoldMessenger.of(ctx);
+    showDialog(
+      context: ctx,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text(
+          '~> eliminar nota?',
+          style: TextStyle(fontFamily: 'monospace', color: Colors.white),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('cancelar', style: TextStyle(fontFamily: 'monospace', color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('eliminar', style: TextStyle(fontFamily: 'monospace', color: Colors.red)),
+          ),
+        ],
+      ),
+    ).then((confirmed) async {
+      if (confirmed == true) {
+        try {
+          await _noteService.deleteNote(note);
+          if (ctx.mounted) {
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text('nota eliminada', style: TextStyle(fontFamily: 'monospace')),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        } catch (e) {
+          if (ctx.mounted) {
+            messenger.showSnackBar(
+              SnackBar(content: Text(e.toString(), style: const TextStyle(fontFamily: 'monospace'))),
+            );
+          }
+        }
+      }
+    });
   }
 
   @override
@@ -32,10 +70,10 @@ class _MyHomePageState extends State<MyHomePage> {
           Positioned.fill(
             child: Padding(
               padding: const EdgeInsets.only(top: 20, left: 16),
-              child: ValueListenableBuilder(
-                valueListenable: _notesBox.listenable(),
-                builder: (context, Box<Note> box, _) {
-                  final notes = box.values.toList();
+              child: ListenableBuilder(
+                listenable: _noteService.listenable(),
+                builder: (context, _) {
+                  final notes = _noteService.getNotes();
                   if (notes.isEmpty) {
                     return const Center(
                       child: Text(
@@ -44,7 +82,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     );
                   }
-                  notes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
                   return ListView(
                     children: notes.map((note) => _NoteTile(
                       note: note,
@@ -56,6 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           _expandedKeys.add(note.key);
                         }
                       }),
+                      onDelete: () => _confirmDelete(context, note),
                     )).toList(),
                   );
                 },
@@ -80,46 +118,14 @@ class _NoteTile extends StatelessWidget {
   final Note note;
   final bool isExpanded;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
 
   const _NoteTile({
     required this.note,
     required this.isExpanded,
     required this.onTap,
+    required this.onDelete,
   });
-
-  void _confirmDelete(BuildContext context) {
-    final messenger = ScaffoldMessenger.of(context);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text(
-          '~> eliminar nota?',
-          style: TextStyle(fontFamily: 'monospace', color: Colors.white),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('cancelar', style: TextStyle(fontFamily: 'monospace', color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('eliminar', style: TextStyle(fontFamily: 'monospace', color: Colors.red)),
-          ),
-        ],
-      ),
-    ).then((confirmed) {
-      if (confirmed == true) {
-        note.delete();
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('nota eliminada', style: TextStyle(fontFamily: 'monospace')),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +176,7 @@ class _NoteTile extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           IconButton(
-                            onPressed: () => _confirmDelete(context),
+                            onPressed: onDelete,
                             icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),

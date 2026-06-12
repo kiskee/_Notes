@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:push_notes/models/note.dart';
-import '../widgets/app_bar.dart';
+import 'package:push_notes/services/note_service.dart';
+import 'package:push_notes/widgets/app_bar.dart';
 
 class AddNoteScreen extends StatefulWidget {
   final Note? existingNote;
@@ -74,7 +74,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               width: double.infinity,
               height: 50,
               child: OutlinedButton(
-                onPressed: () {
+                onPressed: () async {
                   final title = _titleCtrl.text.trim();
                   final desc = _descCtrl.text.trim();
                   if (title.isEmpty) {
@@ -83,15 +83,21 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                     );
                     return;
                   }
-                  final box = Hive.box<Note>('notes');
-                  if (_isEditing) {
-                    widget.existingNote!.title = title;
-                    widget.existingNote!.description = desc;
-                    widget.existingNote!.save();
-                  } else {
-                    box.add(Note(title: title, description: desc));
+                  final service = NoteService();
+                  try {
+                    if (_isEditing) {
+                      await service.updateNote(widget.existingNote!, title, desc);
+                    } else {
+                      await service.addNote(title, desc);
+                    }
+                    if (context.mounted) Navigator.pop(context);
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.toString())),
+                      );
+                    }
                   }
-                  Navigator.pop(context);
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
