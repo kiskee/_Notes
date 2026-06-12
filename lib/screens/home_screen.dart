@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:push_notes/models/note.dart';
 import 'package:push_notes/screens/add_note_screen.dart';
 import 'package:push_notes/widgets/app_bar.dart';
 import 'package:push_notes/widgets/crt_route.dart';
@@ -11,6 +13,14 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  late final Box<Note> _notesBox;
+
+  @override
+  void initState() {
+    super.initState();
+    _notesBox = Hive.box<Note>('notes');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,18 +28,26 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: TopBar(),
       body: Stack(
         children: [
-          const Positioned.fill(
+          Positioned.fill(
             child: Padding(
-              padding: EdgeInsets.only(top: 20, left: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _NoteLine(text: '~> comprar mantequilla'),
-                  _NoteLine(text: '~> llamar al dentista'),
-                  _NoteLine(text: '~> pasear al perro'),
-                  _NoteLine(text: '~> leer "Clean Code"'),
-                  _NoteLine(text: '~> regar las plantas'),
-                ],
+              padding: const EdgeInsets.only(top: 20, left: 16),
+              child: ValueListenableBuilder(
+                valueListenable: _notesBox.listenable(),
+                builder: (context, Box<Note> box, _) {
+                  final notes = box.values.toList();
+                  if (notes.isEmpty) {
+                    return Center(
+                      child: const Text(
+                        '~> sin notas',
+                        style: TextStyle(fontFamily: 'monospace', fontSize: 24, color: Colors.grey),
+                      ),
+                    );
+                  }
+                  notes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                  return ListView(
+                    children: notes.map((note) => _NoteLine(text: '~> ${note.title}')).toList(),
+                  );
+                },
               ),
             ),
           ),

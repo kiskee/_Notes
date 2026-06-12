@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:push_notes/models/note.dart';
 import '../widgets/app_bar.dart';
 
 class AddNoteScreen extends StatefulWidget {
@@ -62,7 +64,18 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               width: double.infinity,
               height: 50,
               child: OutlinedButton(
-                onPressed: () {},
+                onPressed: () {
+                  final title = _titleCtrl.text.trim();
+                  final desc = _descCtrl.text.trim();
+                  if (title.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('titulo requerido')),
+                    );
+                    return;
+                  }
+                  Hive.box<Note>('notes').add(Note(title: title, description: desc));
+                  Navigator.pop(context);
+                },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   backgroundColor: Colors.black,
