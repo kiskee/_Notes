@@ -1,4 +1,5 @@
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:push_notes/models/todo_item.dart';
 
 part 'note.g.dart';
 
@@ -13,9 +14,14 @@ class Note extends HiveObject {
   @HiveField(2)
   DateTime createdAt;
 
+  @HiveField(3)
+  List<TodoItem> todos;
+
   Note({
     required this.title,
     required this.description,
     DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    List<TodoItem>? todos,
+  })  : createdAt = createdAt ?? DateTime.now(),
+        todos = todos ?? [];
 }

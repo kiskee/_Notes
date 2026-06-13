@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:push_notes/models/note.dart';
+import 'package:push_notes/models/todo_item.dart';
 import 'package:push_notes/screens/add_note_screen.dart';
 import 'package:push_notes/services/note_service.dart';
 import 'package:push_notes/widgets/app_bar.dart';
@@ -105,6 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     children: notes
                         .map(
                           (note) => _NoteTile(
+                            key: ValueKey(note.key),
                             note: note,
                             isExpanded: _expandedKeys.contains(note.key),
                             onTap: () => setState(() {
@@ -147,11 +149,17 @@ class _NoteTile extends StatelessWidget {
   final VoidCallback onDelete;
 
   const _NoteTile({
+    super.key,
     required this.note,
     required this.isExpanded,
     required this.onTap,
     required this.onDelete,
   });
+
+  void _toggleTodo(TodoItem todo) {
+    todo.isDone = !todo.isDone;
+    note.save();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -163,7 +171,7 @@ class _NoteTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              ':  ${note.title} >',
+              ': ${note.title} >',
               style: const TextStyle(
                 fontFamily: 'monospace',
                 fontSize: 18,
@@ -185,47 +193,124 @@ class _NoteTile extends StatelessWidget {
               child: isExpanded
                   ? Padding(
                       padding: const EdgeInsets.only(top: 8, left: 24),
-                      child: Row(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          IconButton(
-                            onPressed: () => Navigator.push(
-                              context,
-                              CRTPageRoute(
-                                page: AddNoteScreen(existingNote: note),
-                              ),
+                          // description
+                          Text(
+                            note.description.isEmpty
+                                ? 'sin descripcion'
+                                : note.description,
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 14,
+                              color: Color(0xFFAAAAAA),
                             ),
-                            icon: const Icon(
-                              Icons.edit_outlined,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              note.description.isEmpty
-                                  ? 'sin descripcion'
-                                  : note.description,
-                              style: const TextStyle(
+                          if (note.todos.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            // todos header
+                            const Text(
+                              '> todos:',
+                              style: TextStyle(
                                 fontFamily: 'monospace',
-                                fontSize: 14,
-                                color: Colors.grey,
+                                fontSize: 12,
+                                color: Colors.white38,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            onPressed: onDelete,
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              color: Colors.red,
-                              size: 20,
+                            const SizedBox(height: 6),
+                            ...note.todos.map(
+                              (todo) => GestureDetector(
+                                onTap: () => _toggleTodo(todo),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 4),
+                                  child: Text(
+                                    '[${todo.isDone ? 'x' : ' '}] ${todo.text}',
+                                    style: TextStyle(
+                                      fontFamily: 'monospace',
+                                      fontSize: 14,
+                                      color: todo.isDone
+                                          ? Colors.green
+                                          : Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
+                          ],
+                          const SizedBox(height: 16),
+                          // actions row
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  CRTPageRoute(
+                                    page: AddNoteScreen(existingNote: note),
+                                  ),
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.white24),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.edit_outlined,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'edit',
+                                        style: TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontSize: 14,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              GestureDetector(
+                                onTap: onDelete,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.red),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red,
+                                        size: 16,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'delete',
+                                        style: TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontSize: 14,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

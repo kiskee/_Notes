@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:push_notes/models/note.dart';
+import 'package:push_notes/models/todo_item.dart';
 import 'package:push_notes/services/note_service.dart';
 import 'package:push_notes/widgets/app_bar.dart';
 
@@ -14,32 +15,54 @@ class AddNoteScreen extends StatefulWidget {
 class _AddNoteScreenState extends State<AddNoteScreen> {
   late final TextEditingController _titleCtrl;
   late final TextEditingController _descCtrl;
+  late final TextEditingController _todoCtrl;
+  late List<TodoItem> _todos;
 
   @override
   void initState() {
     super.initState();
     _titleCtrl = TextEditingController(text: widget.existingNote?.title ?? '');
     _descCtrl = TextEditingController(text: widget.existingNote?.description ?? '');
+    _todoCtrl = TextEditingController();
+    _todos = [...widget.existingNote?.todos ?? []];
   }
 
   @override
   void dispose() {
     _titleCtrl.dispose();
     _descCtrl.dispose();
+    _todoCtrl.dispose();
     super.dispose();
   }
 
   bool get _isEditing => widget.existingNote != null;
+
+  void _addTodo() {
+    final text = _todoCtrl.text.trim();
+    if (text.isEmpty) return;
+    setState(() {
+      _todos.add(TodoItem(text: text));
+      _todoCtrl.clear();
+    });
+  }
+
+  void _toggleTodo(TodoItem todo) {
+    setState(() => todo.isDone = !todo.isDone);
+  }
+
+  void _deleteTodo(TodoItem todo) {
+    setState(() => _todos.remove(todo));
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: TopBar(title: _isEditing ? '_Edit Note' : '_New Note'),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text('~> titulo', style: TextStyle(fontFamily: 'monospace', fontSize: 16, color: Colors.white)),
             const SizedBox(height: 8),
@@ -69,6 +92,63 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                 hintStyle: TextStyle(color: Colors.grey, fontFamily: 'monospace'),
               ),
             ),
+            const SizedBox(height: 24),
+            const Text('~> todo list', style: TextStyle(fontFamily: 'monospace', fontSize: 16, color: Colors.white)),
+            const SizedBox(height: 8),
+            ..._todos.map(
+              (todo) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => _toggleTodo(todo),
+                      child: Text(
+                        '[${todo.isDone ? 'x' : ' '}] ${todo.text}',
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 16,
+                          color: todo.isDone ? Colors.green : Colors.grey,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => _deleteTodo(todo),
+                      child: const Icon(Icons.close, size: 18, color: Colors.red),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                Text(
+                  '> ',
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 16, color: Colors.white),
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _todoCtrl,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 16, color: Colors.white),
+                    decoration: const InputDecoration.collapsed(
+                      hintText: 'agregar todo...',
+                      hintStyle: TextStyle(color: Colors.grey, fontFamily: 'monospace'),
+                    ),
+                    onSubmitted: (_) => _addTodo(),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _addTodo,
+                  child: const Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Text(
+                      '+',
+                      style: TextStyle(fontFamily: 'monospace', color: Colors.green, fontSize: 22),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
@@ -86,9 +166,14 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                   final service = NoteService();
                   try {
                     if (_isEditing) {
-                      await service.updateNote(widget.existingNote!, title, desc);
+                      await service.updateNote(
+                        widget.existingNote!,
+                        title,
+                        desc,
+                        todos: _todos,
+                      );
                     } else {
-                      await service.addNote(title, desc);
+                      await service.addNote(title, desc, todos: _todos);
                     }
                     if (context.mounted) Navigator.pop(context);
                   } catch (e) {
