@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:push_notes/models/note.dart';
 import 'package:push_notes/models/todo_item.dart';
 import 'package:push_notes/services/note_service.dart';
@@ -17,6 +18,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   late final TextEditingController _descCtrl;
   late final TextEditingController _todoCtrl;
   late List<TodoItem> _todos;
+  DateTime? _reminderAt;
 
   @override
   void initState() {
@@ -25,6 +27,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     _descCtrl = TextEditingController(text: widget.existingNote?.description ?? '');
     _todoCtrl = TextEditingController();
     _todos = [...widget.existingNote?.todos ?? []];
+    _reminderAt = widget.existingNote?.reminderAt;
   }
 
   @override
@@ -52,6 +55,29 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
 
   void _deleteTodo(TodoItem todo) {
     setState(() => _todos.remove(todo));
+  }
+
+  Future<void> _pickReminder() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _reminderAt ?? now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_reminderAt ?? now),
+    );
+    if (time == null) return;
+    setState(() {
+      _reminderAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    });
+  }
+
+  void _clearReminder() {
+    setState(() => _reminderAt = null);
   }
 
   @override
@@ -149,6 +175,50 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 24),
+            const Text('~> reminder', style: TextStyle(fontFamily: 'monospace', fontSize: 16, color: Colors.white)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (_reminderAt != null) ...[
+                  Text(
+                    DateFormat('yyyy-MM-dd HH:mm').format(_reminderAt!),
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 14, color: Colors.amber),
+                  ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: _clearReminder,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(border: Border.all(color: Colors.red)),
+                      child: const Text(
+                        'clear',
+                        style: TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.red),
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  GestureDetector(
+                    onTap: _pickReminder,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(border: Border.all(color: Colors.white24)),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.notifications_outlined, size: 16, color: Colors.amber),
+                          SizedBox(width: 6),
+                          Text(
+                            'set reminder',
+                            style: TextStyle(fontFamily: 'monospace', fontSize: 14, color: Colors.amber),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
             const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
@@ -171,9 +241,15 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                         title,
                         desc,
                         todos: _todos,
+                        reminderAt: _reminderAt,
                       );
                     } else {
-                      await service.addNote(title, desc, todos: _todos);
+                      await service.addNote(
+                        title,
+                        desc,
+                        todos: _todos,
+                        reminderAt: _reminderAt,
+                      );
                     }
                     if (context.mounted) Navigator.pop(context);
                   } catch (e) {

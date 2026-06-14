@@ -17,11 +17,15 @@ class Note extends HiveObject {
   @HiveField(3)
   List<TodoItem> todos;
 
+  @HiveField(4)
+  DateTime? reminderAt;
+
   Note({
     required this.title,
     required this.description,
     DateTime? createdAt,
     List<TodoItem>? todos,
+    this.reminderAt,
   })  : createdAt = createdAt ?? DateTime.now(),
         todos = todos ?? [];
 }

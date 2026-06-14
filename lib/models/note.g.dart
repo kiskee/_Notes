@@ -21,13 +21,14 @@ class NoteAdapter extends TypeAdapter<Note> {
       description: fields[1] as String,
       createdAt: fields[2] as DateTime?,
       todos: (fields[3] as List?)?.cast<TodoItem>(),
+      reminderAt: fields[4] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Note obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.title)
       ..writeByte(1)
@@ -35,7 +36,9 @@ class NoteAdapter extends TypeAdapter<Note> {
       ..writeByte(2)
       ..write(obj.createdAt)
       ..writeByte(3)
-      ..write(obj.todos);
+      ..write(obj.todos)
+      ..writeByte(4)
+      ..write(obj.reminderAt);
   }
 
   @override

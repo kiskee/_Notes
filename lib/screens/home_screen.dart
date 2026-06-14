@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:push_notes/models/note.dart';
 import 'package:push_notes/models/todo_item.dart';
+import 'package:push_notes/navigation.dart';
 import 'package:push_notes/screens/add_note_screen.dart';
 import 'package:push_notes/services/note_service.dart';
 import 'package:push_notes/widgets/app_bar.dart';
@@ -17,6 +18,27 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final _noteService = NoteService();
   final Set<dynamic> _expandedKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    selectedNoteKeyNotifier.addListener(_onPendingNoteKey);
+    _onPendingNoteKey();
+  }
+
+  @override
+  void dispose() {
+    selectedNoteKeyNotifier.removeListener(_onPendingNoteKey);
+    super.dispose();
+  }
+
+  void _onPendingNoteKey() {
+    final key = selectedNoteKeyNotifier.value;
+    if (key != null) {
+      setState(() => _expandedKeys.add(key));
+      selectedNoteKeyNotifier.value = null;
+    }
+  }
 
   void _confirmDelete(BuildContext ctx, Note note) {
     final messenger = ScaffoldMessenger.of(ctx);
@@ -186,6 +208,26 @@ class _NoteTile extends StatelessWidget {
                 color: Colors.grey,
               ),
             ),
+            if (note.reminderAt != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.notifications_outlined, size: 14, color: Colors.amber),
+                    const SizedBox(width: 6),
+                    Text(
+                      DateFormat('MM-dd HH:mm').format(note.reminderAt!),
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: note.reminderAt!.isBefore(DateTime.now())
+                            ? Colors.red
+                            : Colors.amber,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             AnimatedSize(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeInOut,
